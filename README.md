@@ -2,8 +2,6 @@
 
 Đủ loại ứng dụng cho chiếc T-Display của tôi.
 
-[![Watch the video](https://img.youtube.com/vi/Rc5NstE1-d4/maxresdefault.jpg)](https://www.youtube.com/watch?v=Rc5NstE1-d4)
-
 [![Web Installer](https://img.shields.io/badge/Web_Installer-Flash_from_Browser-00f0ff?style=for-the-badge&logo=googlechrome&logoColor=black)](https://kreier.github.io/t-display-again/)
 [![Release](https://img.shields.io/github/v/release/kreier/t-display-again?style=for-the-badge)](https://github.com/kreier/t-display-again/releases/tag/0.1.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -33,6 +31,8 @@ Version `0.1.0` introduces a dedicated firmware application that displays **"П�
 | [L]Theme  [R]Info                          00:42 |
 +--------------------------------------------------+
 ```
+
+![Picture of running system](docs/hello_world.jpg)
 
 ### Features
 
