@@ -2,6 +2,7 @@
 
 Đủ loại ứng dụng cho chiếc T-Display của tôi.
 
+[![Watch the video](https://img.youtube.com/vi/Rc5NstE1-d4/maxresdefault.jpg)](https://www.youtube.com/watch?v=Rc5NstE1-d4)
 
 ## Writing style
 
