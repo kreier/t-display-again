@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LilyGO TTGO T-Display Web Installer — Привет, мир!</title>
+  <meta name="description" content="Flash Russian 'Привет, мир!' firmware onto your LilyGO TTGO T-Display ESP32 directly from your web browser.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #131b2e;
+      --card-border: #1e2d4a;
+      --accent-cyan: #00f0ff;
+      --accent-magenta: #ff007f;
+      --accent-green: #00ff66;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --btn-bg: #00f0ff;
+      --btn-text: #0b0f19;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem;
+      line-height: 1.6;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 600px;
+    }
+
+    /* Screen Mockup */
+    .screen-preview-wrapper {
+      display: flex;
+      justify-content: center;
+      margin: 0.5rem 0;
+    }
+
+    .device-mockup {
+      width: 320px;
+      height: 180px;
+      background: #000;
+      border-radius: 14px;
+      border: 4px solid #334155;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: monospace;
+    }
+
+    .mock-header {
+      background: #0167;
+      border-bottom: 1px solid #05fd;
+      padding: 3px 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #fff;
+    }
+
+    .mock-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0863;
+      padding: 8px;
+    }
+
+    .mock-card {
+      width: 90%;
+      height: 85%;
+      background: #0108;
+      border: 1px solid #05fd;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.08);
+    }
+
+    .mock-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #07ff;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+
+    .mock-sub {
+      font-size: 12px;
+      color: #f81f;
+    }
+
+    .mock-chip {
+      font-size: 8px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .mock-footer {
+      background: #0108;
+      border-top: 1px solid #05fd;
+      padding: 3px 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #f81f;
+    }
+
+    /* Flash Card */
+    .installer-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .installer-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      width: 100%;
+      text-align: left;
+    }
+
+    .step-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      background: var(--accent-cyan);
+      color: #0b0f19;
+      font-weight: bold;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .step-text strong {
+      color: var(--text-main);
+    }
+
+    /* ESP Web Install Button Customization */
+    esp-web-install-button {
+      --esp-tools-button-color: var(--btn-bg);
+      --esp-tools-button-text-color: var(--btn-text);
+      --esp-tools-button-border-radius: 10px;
+      --esp-tools-button-padding: 14px 28px;
+      --esp-tools-button-font-size: 1.1rem;
+    }
+
+    .custom-install-btn {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 240, 255, 0.35);
+    }
+
+    .custom-install-btn:hover {
+      background: #33f4ff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 240, 255, 0.5);
+    }
+
+    .alert-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    /* Info Table */
+    .info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .info-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      color: var(--accent-cyan);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    /* Links & Footer */
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-top: 1rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="badge">ESP32 &bull; ST7789 240x135 &bull; v0.1.0</div>
+      <h1>T-Display Web Installer</h1>
+      <p class="subtitle">Flash the Russian <strong>"Привет, мир!"</strong> firmware onto your LilyGO TTGO T-Display directly from your browser via Web Serial.</p>
+    </header>
+
+    <!-- Visual Mockup -->
+    <div class="screen-preview-wrapper">
+      <div class="device-mockup">
+        <div class="mock-header">
+          <span>TTGO T-Display ESP32</span>
+          <span>Cyberpunk</span>
+        </div>
+        <div class="mock-body">
+          <div class="mock-card">
+            <span class="mock-title">Привет, мир!</span>
+            <span class="mock-sub">Hello World!</span>
+            <span class="mock-chip">ESP32 &bull; 4MB FLASH &bull; ST7789</span>
+          </div>
+        </div>
+        <div class="mock-footer">
+          <span>[L]Theme [R]Info</span>
+          <span>00:42</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Web Installer Card -->
+    <div class="installer-card">
+      <h2 class="installer-title">Install Firmware</h2>
+
+      <div class="steps">
+        <div class="step-item">
+          <span class="step-number">1</span>
+          <p class="step-text">Connect your <strong>T-Display</strong> to your computer using a USB-C data cable.</p>
+        </div>
+        <div class="step-item">
+          <span class="step-number">2</span>
+          <p class="step-text">Click <strong>Connect &amp; Flash</strong> below and choose your USB serial port in the pop-up.</p>
+        </div>
+        <div class="step-item">
+          <span class="step-number">3</span>
+          <p class="step-text">Confirm <strong>Install</strong> to write the firmware in ~15 seconds.</p>
+        </div>
+      </div>
+
+      <!-- ESP Web Install Component -->
+      <esp-web-install-button manifest="manifest.json">
+        <button slot="activate" class="custom-install-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          Connect &amp; Flash
+        </button>
+        <div slot="unsupported" class="alert-box">
+          ⚠️ <strong>Web Serial is not supported by your browser.</strong><br>
+          Please open this page in <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Opera</strong> on desktop (Windows, macOS, Linux, or ChromeOS).
+        </div>
+        <div slot="not-allowed" class="alert-box">
+          ⚠️ <strong>Web Serial requires a secure context (HTTPS).</strong><br>
+          Please ensure you are accessing this page over HTTPS.
+        </div>
+      </esp-web-install-button>
+    </div>
+
+    <!-- Features Overview -->
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🇷🇺</div>
+        <div class="feature-title">Native Cyrillic UTF-8</div>
+        <div class="feature-desc">Embedded FreeSans Cyrillic font headers (12pt &amp; 9pt) supporting all Russian uppercase and lowercase letters.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">5 Color Themes</div>
+        <div class="feature-desc">Cyberpunk, Emerald Matrix, Sunset Gold, Nordic Ice, and Retro Amber CRT. Switch live with Button 1.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Interactive Screens</div>
+        <div class="feature-desc">Cycle between Greeting Card, Live System Diagnostics (CPU/Heap/Flash), and Alphabet showcase with Button 2.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">180° Screen Flip</div>
+        <div class="feature-desc">Long-press Button 1 (>1.5s) to rotate the screen 180 degrees so USB orientation is never an issue.</div>
+      </div>
+    </div>
+
+    <!-- Hardware Controls Cheatsheet -->
+    <div class="info-card">
+      <h3>Hardware Controls &amp; Pinout</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Input</th>
+            <th>GPIO Pin</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Button 1 (Left / Top)</strong></td>
+            <td><code>GPIO 0</code></td>
+            <td>Short press: Cycle color theme<br>Long press (>1.5s): Flip rotation 180°</td>
+          </tr>
+          <tr>
+            <td><strong>Button 2 (Right / Bottom)</strong></td>
+            <td><code>GPIO 35</code></td>
+            <td>Short press: Switch screen (Greeting &rarr; SysInfo &rarr; Alphabet)</td>
+          </tr>
+          <tr>
+            <td><strong>Backlight Control</strong></td>
+            <td><code>GPIO 4</code></td>
+            <td>ST7789 Backlight power (Active HIGH)</td>
+          </tr>
+          <tr>
+            <td><strong>SPI Display Bus</strong></td>
+            <td><code>MOSI 19</code>, <code>SCLK 18</code>, <code>CS 5</code>, <code>DC 16</code>, <code>RST 23</code></td>
+            <td>ST7789 IPS 240x135 LCD</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Manual Download Section -->
+    <div class="info-card">
+      <h3>Manual Downloads &amp; Offline Flashing</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+        If you prefer flashing manually using <code>esptool.py</code>:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Size</th>
+            <th>Flashing Offset</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="bin/merged-firmware.bin" download>merged-firmware.bin</a> (All-in-One)</td>
+            <td>~390 KB</td>
+            <td><code>0x0</code> (Single command full flash)</td>
+          </tr>
+          <tr>
+            <td><a href="bin/firmware.bin" download>firmware.bin</a> (App only)</td>
+            <td>~325 KB</td>
+            <td><code>0x10000</code></td>
+          </tr>
+          <tr>
+            <td><a href="bin/bootloader.bin" download>bootloader.bin</a></td>
+            <td>~23 KB</td>
+            <td><code>0x1000</code></td>
+          </tr>
+          <tr>
+            <td><a href="bin/partitions.bin" download>partitions.bin</a></td>
+            <td>~3 KB</td>
+            <td><code>0x8000</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+        One-liner flash command:
+        <code style="display: block; margin-top: 0.4rem; padding: 0.5rem; word-break: break-all;">
+          esptool.py --chip esp32 write_flash 0x0 merged-firmware.bin
+        </code>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/kreier/t-display-again" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="https://github.com/kreier/t-display-again/releases/tag/0.1.0" target="_blank" rel="noopener">Release v0.1.0</a>
+        <a href="https://esphome.github.io/esp-web-tools/" target="_blank" rel="noopener">Powered by ESP Web Tools</a>
+      </div>
+      <div>LilyGO TTGO T-Display ESP32 &bull; Licensed under MIT</div>
+    </footer>
+  </div>
+
+</body>
+</html>

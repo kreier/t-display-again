@@ -4,7 +4,14 @@
 
 [![Watch the video](https://img.youtube.com/vi/Rc5NstE1-d4/maxresdefault.jpg)](https://www.youtube.com/watch?v=Rc5NstE1-d4)
 
+[![Web Installer](https://img.shields.io/badge/Web_Installer-Flash_from_Browser-00f0ff?style=for-the-badge&logo=googlechrome&logoColor=black)](https://kreier.github.io/t-display-again/)
+[![Release](https://img.shields.io/github/v/release/kreier/t-display-again?style=for-the-badge)](https://github.com/kreier/t-display-again/releases/tag/0.1.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
 A collection of applications for the **LilyGO TTGO T-Display** (ESP32 with 4 MB Flash and ST7789 1.14" 240x135 IPS display).
+
+🌐 **Online Web Installer**: Flash the firmware straight from your browser without installing Python, Arduino, or drivers: **[https://kreier.github.io/t-display-again/](https://kreier.github.io/t-display-again/)**
+
 
 ---
 
@@ -74,9 +81,19 @@ The original **LilyGO TTGO T-Display** is powered by an Espressif ESP32-D0WDQ6 c
 
 ---
 
-## How to Build & Flash
+## How to Flash & Install
 
-### Method 1: PlatformIO (Recommended)
+### Method 1: Web Installer (Fastest & Easiest)
+
+No software, libraries, or drivers needed!
+
+1. Open **[https://kreier.github.io/t-display-again/](https://kreier.github.io/t-display-again/)** in **Google Chrome**, **Microsoft Edge**, or **Opera** on desktop.
+2. Connect your LilyGO TTGO T-Display via USB-C.
+3. Click **Connect & Flash**, select your serial device port, and confirm the installation.
+
+---
+
+### Method 2: PlatformIO
 
 This repository includes a ready-to-use `platformio.ini` configured with all hardware definitions and the `TFT_eSPI` library.
 
@@ -90,7 +107,9 @@ This repository includes a ready-to-use `platformio.ini` configured with all har
    pio device monitor
    ```
 
-### Method 2: Arduino IDE
+---
+
+### Method 3: Arduino IDE
 
 1. Open Arduino IDE and install the **ESP32** board package (`esp32` by Espressif).
 2. Install the **TFT_eSPI** library via the Library Manager.
@@ -103,6 +122,16 @@ This repository includes a ready-to-use `platformio.ini` configured with all har
    - Flash Size: **4MB (32Mb)**
    - Upload Speed: **921600** (or 115200)
 5. Open [`firmware/hello_world.ino`](firmware/hello_world.ino) and click **Upload**.
+
+---
+
+### Method 4: Esptool (Precompiled Binary)
+
+You can flash the precompiled all-in-one binary with a single command:
+```bash
+esptool.py --chip esp32 write_flash 0x0 bin/merged-firmware.bin
+```
+
 
 ---
 
@@ -149,9 +178,18 @@ By disabling the library's internal multi-byte decoder (`tft.setAttribute(UTF8_S
 
 ```
 ├── .gitignore               # Git ignore rules (build files, .pio, etc.)
+├── .nojekyll                # Bypass Jekyll for direct static file serving on GitHub Pages
 ├── LICENSE                  # MIT License
 ├── README.md                # Project documentation
+├── index.html               # Web Installer webpage (ESP Web Tools)
+├── manifest.json            # ESP Web Tools manifest
 ├── platformio.ini           # PlatformIO project configuration
+├── bin/                     # Precompiled binaries for Web Flasher & esptool
+│   ├── bootloader.bin       # ESP32 second-stage bootloader (0x1000)
+│   ├── partitions.bin       # Partition table (0x8000)
+│   ├── boot_app0.bin        # OTA data initial bootloader state (0xe000)
+│   ├── firmware.bin         # Application binary (0x10000)
+│   └── merged-firmware.bin  # Single combined 4MB flash image (0x0)
 └── firmware/
     ├── hello_world.ino      # Main application source code
     ├── FreeSansBold12.h     # 12pt Bold Cyrillic GFX font
