@@ -1,25 +1,27 @@
 /*
  * ======================================================================================
- * Project:     T-Display Russian "Hello World!" (Привет, мир!)
+ * Project:     T-Display "Hello World!" — Russian & Vietnamese Editions
  * Platform:    LilyGO TTGO T-Display (ESP32-D0WDQ6, ST7789 240x135 IPS LCD, 4MB Flash)
  * Author:      Matthias Kreier / AI Assistant
  * License:     MIT
  *
  * Description:
- *   A feature-packed, polished "Hello World!" application displaying "Привет, мир!"
- *   in Russian on the LilyGO TTGO T-Display (ESP32 with 4MB Flash).
+ *   A feature-packed, polished "Hello World!" application with native multi-language
+ *   support for both Russian ("Привет, мир!") and Vietnamese ("Xin chào thế giới!").
  *
  *   Includes:
- *     - Full Cyrillic (Russian) UTF-8 rendering using embedded FreeSans fonts
+ *     - Full Russian Cyrillic UTF-8 rendering via FreeSansBold12 & FreeSans9
+ *     - Full Vietnamese UTF-8 rendering with all tone marks & diacritics
+ *       via VietnameseSansBold12 & VietnameseSans9 + VietnameseEncoder
+ *     - Runtime language toggle (Hold Button 2 for >1.5s)
  *     - 5 selectable color themes (Cyberpunk, Emerald Matrix, Sunset, Nordic, CRT)
  *     - Multiple interactive display modes:
- *         1. Greeting Card ("Привет, мир!" & "Hello World!")
+ *         1. Greeting Card ("Привет, мир!" / "Xin chào thế giới!")
  *         2. System Diagnostics (ESP32 chip, CPU, 4MB Flash, Free RAM, SDK)
- *         3. Russian Alphabet Cyrillic font showcase (А-Я, а-я, Ё, ё)
- *     - 180-degree display rotation toggle (USB left or right)
- *     - Hardware button controls with debouncing
- *     - Real-time uptime counter in footer without screen flicker
- *     - Informative Serial diagnostics at 115200 baud
+ *         3. Font Alphabet Showcase (Russian Cyrillic or Vietnamese with diacritics)
+ *     - 180-degree display rotation toggle (Hold Button 1 for >1.5s)
+ *     - Hardware button debouncing and non-blocking real-time clock counter
+ *     - Serial diagnostics at 115200 baud
  *
  * Hardware Pinout (LilyGO TTGO T-Display):
  *   - TFT MOSI:    GPIO 19
@@ -30,19 +32,21 @@
  *   - TFT BL:      GPIO 4   (Backlight power control, active HIGH)
  *   - Button 1:    GPIO 0   (Top / Left button, active LOW, internal pull-up)
  *   - Button 2:    GPIO 35  (Bottom / Right button, active LOW, input-only pin)
- *
- * How to compile:
- *   - PlatformIO:  Run `pio run -t upload` (pre-configured via platformio.ini)
- *   - Arduino IDE: Select "ESP32 Dev Module", configure TFT_eSPI User_Setup_Select.h
- *                  to include `User_Setups/Setup25_TTGO_T_Display.h`.
  * ======================================================================================
  */
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <TFT_eSPI.h>
+
+// Russian Cyrillic Font Headers
 #include "FreeSansBold12.h"
 #include "FreeSans9.h"
+
+// Vietnamese Font Headers & UTF-8 Decoder
+#include "VietnameseSansBold12.h"
+#include "VietnameseSans9.h"
+#include "VietnameseEncoder.h"
 
 // Hardware Pin Definitions
 #define TFT_BL_PIN   4   // LCD Backlight control pin (active HIGH)
@@ -51,6 +55,18 @@
 
 // TFT_eSPI instance
 TFT_eSPI tft = TFT_eSPI();
+
+// Supported Languages
+enum AppLanguage {
+  LANG_RU = 0, // Russian: "Привет, мир!"
+  LANG_VI = 1  // Vietnamese: "Xin chào thế giới!"
+};
+
+#if defined(APP_DEFAULT_LANG_VI)
+AppLanguage currentLang = LANG_VI;
+#else
+AppLanguage currentLang = LANG_RU;
+#endif
 
 // UI Color Theme Definition
 struct Theme {
@@ -83,9 +99,9 @@ uint8_t currentTheme = 0;
 
 // Screen Modes
 enum DisplayScreen {
-  SCREEN_GREETING = 0, // Russian "Привет, мир!" & "Hello World!"
+  SCREEN_GREETING = 0, // Main Greeting Card
   SCREEN_SYSINFO  = 1, // ESP32 Hardware Diagnostics
-  SCREEN_ALPHABET = 2, // Cyrillic Font Alphabet Showcase
+  SCREEN_ALPHABET = 2, // Font Alphabet Showcase
   SCREEN_COUNT    = 3
 };
 DisplayScreen currentScreen = SCREEN_GREETING;
@@ -102,23 +118,8 @@ unsigned long btn1PressStart   = 0;
 unsigned long btn2PressStart   = 0;
 
 // ======================================================================================
-// UTF-8 TO CYRILLIC ENCODING HELPER
+// UTF-8 TO RUSSIAN CYRILLIC ENCODING HELPER
 // ======================================================================================
-/**
- * @brief Converts UTF-8 Russian strings into single-byte character indices matching
- *        the embedded FreeSans Cyrillic font tables.
- *
- * In standard UTF-8:
- *   - 'А'..'Я' = 0xD0 0x90 .. 0xD0 0xAF  -> mapped to 0x90 .. 0xAF (144..175)
- *   - 'а'..'п' = 0xD0 0xB0 .. 0xD0 0xBF  -> mapped to 0xB0 .. 0xBF (176..191)
- *   - 'р'..'я' = 0xD1 0x80 .. 0xD1 0x8F  -> mapped to 0x80 .. 0x8F (128..143)
- *   - 'Ё'      = 0xD0 0x81               -> mapped to 0xC0 (192)
- *   - 'ё'      = 0xD1 0x91               -> mapped to 0xC1 (193)
- *   - ASCII    = 0x20 .. 0x7E            -> preserved untouched
- *
- * @param source UTF-8 null-terminated C string
- * @return String with single-byte indexed character codes
- */
 String utf8rus(const char* source) {
   String target = "";
   int i = 0;
@@ -161,9 +162,13 @@ void drawHeader() {
   tft.setTextSize(1);
   tft.setTextColor(th.headerText, th.headerBg);
 
-  // Left: Board title
+  // Left: Board title & Language indicator
   tft.setTextDatum(ML_DATUM);
-  tft.drawString(" TTGO T-Display ESP32", 4, 9);
+  if (currentLang == LANG_RU) {
+    tft.drawString(" TTGO T-Display [RU]", 4, 9);
+  } else {
+    tft.drawString(" TTGO T-Display [VI]", 4, 9);
+  }
 
   // Right: Active theme name
   tft.setTextDatum(MR_DATUM);
@@ -182,14 +187,14 @@ void drawFooter() {
   tft.setTextSize(1);
   tft.setTextColor(th.secondary, th.cardBg);
 
-  // Left: Hardware button shortcuts hint
+  // Left: Button hints
   tft.setTextDatum(ML_DATUM);
   if (currentScreen == SCREEN_GREETING) {
-    tft.drawString(" [L]Theme  [R]Info", 4, 127);
+    tft.drawString(" [L]Theme [R]Info", 4, 127);
   } else if (currentScreen == SCREEN_SYSINFO) {
-    tft.drawString(" [L]Theme  [R]Font", 4, 127);
+    tft.drawString(" [L]Theme [R]Font", 4, 127);
   } else {
-    tft.drawString(" [L]Theme  [R]Home", 4, 127);
+    tft.drawString(" [L]Theme [R]Home", 4, 127);
   }
 
   // Right: Uptime in MM:SS format
@@ -204,7 +209,7 @@ void drawFooter() {
 }
 
 /**
- * @brief Main Greeting Screen: Displays "Привет, мир!" in Cyrillic & "Hello World!".
+ * @brief Main Greeting Screen: Displays "Привет, мир!" or "Xin chào thế giới!".
  */
 void drawGreetingScreen() {
   const Theme& th = themes[currentTheme];
@@ -220,17 +225,29 @@ void drawGreetingScreen() {
   tft.fillCircle(16, 32, 2, th.secondary);
   tft.fillCircle(224, 32, 2, th.secondary);
 
-  // Primary Russian Headline: "Привет, мир!" using FreeSansBold12pt8b
-  tft.setFreeFont(&FreeSansBold12pt8b);
-  tft.setTextColor(th.primary, th.cardBg);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString(utf8rus("Привет, мир!"), 120, 56);
 
-  // Secondary English Subtitle: "Hello World!" using FreeSans9pt8b
-  tft.setFreeFont(&FreeSans9pt8b);
-  tft.setTextColor(th.secondary, th.cardBg);
-  tft.setTextDatum(MC_DATUM);
-  tft.drawString("Hello World!", 120, 80);
+  if (currentLang == LANG_RU) {
+    // Primary Headline: Russian "Привет, мир!"
+    tft.setFreeFont(&FreeSansBold12pt8b);
+    tft.setTextColor(th.primary, th.cardBg);
+    tft.drawString(utf8rus("Привет, мир!"), 120, 55);
+
+    // Subtitle: "Hello World!"
+    tft.setFreeFont(&FreeSans9pt8b);
+    tft.setTextColor(th.secondary, th.cardBg);
+    tft.drawString("Hello World!", 120, 78);
+  } else {
+    // Primary Headline: Vietnamese "Xin chào thế giới!"
+    tft.setFreeFont(&VietnameseSansBold12pt8b);
+    tft.setTextColor(th.primary, th.cardBg);
+    tft.drawString(utf8viet("Xin chào thế giới!"), 120, 55);
+
+    // Subtitle: "Hello World!"
+    tft.setFreeFont(&VietnameseSans9pt8b);
+    tft.setTextColor(th.secondary, th.cardBg);
+    tft.drawString("Hello World!", 120, 78);
+  }
 
   // Hardware Subcaption
   tft.setTextFont(1);
@@ -271,12 +288,13 @@ void drawSysInfoScreen() {
   snprintf(buf, sizeof(buf), "Screen: 240x135 IPS ST7789 (Rot %d)", currentRotation);
   tft.drawString(buf, 16, 80);
 
-  snprintf(buf, sizeof(buf), "SDK:    %s", ESP.getSdkVersion());
+  const char* langStr = (currentLang == LANG_RU) ? "Russian (RU)" : "Vietnamese (VI)";
+  snprintf(buf, sizeof(buf), "Lang:   %s", langStr);
   tft.drawString(buf, 16, 95);
 }
 
 /**
- * @brief Russian Font Showcase Screen: Demonstrates full Cyrillic character set.
+ * @brief Alphabet Showcase Screen: Demonstrates Cyrillic or Vietnamese character rendering.
  */
 void drawAlphabetScreen() {
   const Theme& th = themes[currentTheme];
@@ -289,19 +307,34 @@ void drawAlphabetScreen() {
   tft.setTextSize(1);
   tft.setTextColor(th.secondary, th.cardBg);
   tft.setTextDatum(TC_DATUM);
-  tft.drawString("Russian Cyrillic Alphabet Test", 120, 27);
 
-  // Render Cyrillic characters using FreeSans9pt8b
-  tft.setFreeFont(&FreeSans9pt8b);
-  tft.setTextColor(th.primary, th.cardBg);
-  tft.setTextDatum(MC_DATUM);
+  if (currentLang == LANG_RU) {
+    tft.drawString("Russian Cyrillic Alphabet Test", 120, 27);
 
-  // Line 1: Uppercase subset 1
-  tft.drawString(utf8rus("АБВГДЕЁЖЗИЙКЛМ"), 120, 50);
-  // Line 2: Uppercase subset 2
-  tft.drawString(utf8rus("НОПРСТУФХЦЧШЩ"), 120, 70);
-  // Line 3: Lowercase subset
-  tft.drawString(utf8rus("абвгдеёжзийклмноп"), 120, 92);
+    tft.setFreeFont(&FreeSans9pt8b);
+    tft.setTextColor(th.primary, th.cardBg);
+    tft.setTextDatum(MC_DATUM);
+
+    // Line 1: Uppercase subset 1
+    tft.drawString(utf8rus("АБВГДЕЁЖЗИЙКЛМ"), 120, 50);
+    // Line 2: Uppercase subset 2
+    tft.drawString(utf8rus("НОПРСТУФХЦЧШЩ"), 120, 70);
+    // Line 3: Lowercase subset
+    tft.drawString(utf8rus("абвгдеёжзийклмноп"), 120, 92);
+  } else {
+    tft.drawString("B\xC3\xA0ng ch\xE1\xBB\xAF c\xC3\xA1i ti\xE1\xBA\xBFng Vi\xE1\xBB\x87t", 120, 27); // "Bảng chữ cái tiếng Việt" in ASCII fallback or draw with font
+
+    tft.setFreeFont(&VietnameseSans9pt8b);
+    tft.setTextColor(th.primary, th.cardBg);
+    tft.setTextDatum(MC_DATUM);
+
+    // Line 1: Vietnamese Vowels 1
+    tft.drawString(utf8viet("a à á ả ã ạ  ă ằ ắ ẳ ẵ ặ"), 120, 48);
+    // Line 2: Vietnamese Vowels 2
+    tft.drawString(utf8viet("â ầ ấ ẩ ẫ ậ  e è é ẻ ẽ ẹ"), 120, 68);
+    // Line 3: Vietnamese Vowels 3
+    tft.drawString(utf8viet("ê ề ế ể ễ ệ  ơ ờ ớ ở ỡ ợ"), 120, 88);
+  }
 }
 
 /**
@@ -334,28 +367,26 @@ void setup() {
   delay(100);
 
   Serial.println("\n========================================================");
-  Serial.println("   LilyGO TTGO T-Display: Russian 'Hello World!'");
-  Serial.println("   Text: Привет, мир! / Hello World!");
+  Serial.println("   LilyGO TTGO T-Display: Russian & Vietnamese Edition");
+  Serial.printf("   Active Language: %s\n", (currentLang == LANG_RU) ? "Russian (RU)" : "Vietnamese (VI)");
   Serial.printf("   ESP32 Chip: %s Rev %d\n", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("   Flash Size: %u MB\n", (unsigned int)(ESP.getFlashChipSize() / (1024 * 1024)));
   Serial.println("========================================================");
 
   // Configure Button Pins
-  // Button 1 (GPIO 0 / BOOT button) has an internal pull-up resistor
-  pinMode(BTN1_PIN, INPUT_PULLUP);
-  // Button 2 (GPIO 35) is an input-only pin on ESP32, pull-up is provided on-board
-  pinMode(BTN2_PIN, INPUT);
+  pinMode(BTN1_PIN, INPUT_PULLUP); // Button 1 has internal pull-up
+  pinMode(BTN2_PIN, INPUT);        // Button 2 has on-board pull-up
 
-  // Power on the ST7789 Backlight (GPIO 4 is active HIGH)
+  // Power on ST7789 Backlight (GPIO 4 is active HIGH)
   pinMode(TFT_BL_PIN, OUTPUT);
   digitalWrite(TFT_BL_PIN, HIGH);
 
-  // Initialize the TFT Display
+  // Initialize TFT Display
   tft.init();
   tft.setRotation(currentRotation);
 
   // Disable TFT_eSPI internal multi-byte UTF-8 decoder so our single-byte
-  // remapped Cyrillic character codes pass directly to the font renderer
+  // remapped character codes pass directly to the font renderer
   tft.setAttribute(UTF8_SWITCH, false);
 
   // Clear display and render initial greeting screen
@@ -364,8 +395,9 @@ void setup() {
 
   Serial.println("Ready!");
   Serial.println(" - Press Button 1 (IO 0) to cycle color themes.");
-  Serial.println(" - Press Button 2 (IO 35) to switch screens.");
   Serial.println(" - Hold Button 1 (>1.5s) to rotate display 180 degrees.");
+  Serial.println(" - Press Button 2 (IO 35) to switch screens.");
+  Serial.println(" - Hold Button 2 (>1.5s) to toggle language (RU <-> VI).");
 }
 
 // ======================================================================================
@@ -383,9 +415,9 @@ void loop() {
 
     // --- BUTTON 1 HANDLING (GPIO 0: Left / Top) ---
     if (btn1LastState == HIGH && btn1State == LOW) {
-      btn1PressStart = now; // Button pressed down
+      btn1PressStart = now; // Pressed down
     } else if (btn1LastState == LOW && btn1State == HIGH) {
-      // Button released
+      // Released
       unsigned long duration = now - btn1PressStart;
       if (duration >= 1500) {
         // Long press (>1.5s): Rotate screen 180 degrees
@@ -406,11 +438,18 @@ void loop() {
 
     // --- BUTTON 2 HANDLING (GPIO 35: Right / Bottom) ---
     if (btn2LastState == HIGH && btn2State == LOW) {
-      btn2PressStart = now; // Button pressed down
+      btn2PressStart = now; // Pressed down
     } else if (btn2LastState == LOW && btn2State == HIGH) {
-      // Button released
+      // Released
       unsigned long duration = now - btn2PressStart;
-      if (duration >= 50) {
+      if (duration >= 1500) {
+        // Long press (>1.5s): Toggle language RU <-> VI
+        currentLang = (currentLang == LANG_RU) ? LANG_VI : LANG_RU;
+        tft.fillScreen(themes[currentTheme].bg);
+        redrawCurrentScreen();
+        Serial.printf("[Button 2 Long Press] Language switched to: %s\n",
+                      (currentLang == LANG_RU) ? "Russian (RU)" : "Vietnamese (VI)");
+      } else if (duration >= 50) {
         // Short press: Switch to next screen
         currentScreen = (DisplayScreen)((currentScreen + 1) % SCREEN_COUNT);
         tft.fillScreen(themes[currentTheme].bg);

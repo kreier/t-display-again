@@ -1,0 +1,16 @@
+{
+  "name": "LilyGO TTGO T-Display Vietnamese (Xin chào thế giới!)",
+  "version": "0.2.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "bin/bootloader.bin", "offset": 4096 },
+        { "path": "bin/partitions.bin", "offset": 32768 },
+        { "path": "bin/boot_app0.bin", "offset": 57344 },
+        { "path": "bin/firmware-vi.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

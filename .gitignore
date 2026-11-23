@@ -57,4 +57,7 @@ dkms.conf
 # PlatformIO & IDE
 .pio/
 .vscode/
+__pycache__/
+*.pyc
+
 

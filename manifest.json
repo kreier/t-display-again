@@ -1,6 +1,6 @@
 {
-  "name": "LilyGO TTGO T-Display Russian Hello World",
-  "version": "0.1.0",
+  "name": "LilyGO TTGO T-Display Russian & Vietnamese",
+  "version": "0.2.0",
   "new_install_prompt_erase": true,
   "builds": [
     {
@@ -9,7 +9,7 @@
         { "path": "bin/bootloader.bin", "offset": 4096 },
         { "path": "bin/partitions.bin", "offset": 32768 },
         { "path": "bin/boot_app0.bin", "offset": 57344 },
-        { "path": "bin/firmware.bin", "offset": 65536 }
+        { "path": "bin/firmware-ru.bin", "offset": 65536 }
       ]
     }
   ]

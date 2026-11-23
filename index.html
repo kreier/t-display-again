@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LilyGO TTGO T-Display Web Installer — Привет, мир!</title>
-  <meta name="description" content="Flash Russian 'Привет, мир!' firmware onto your LilyGO TTGO T-Display ESP32 directly from your web browser.">
+  <title>LilyGO TTGO T-Display Web Installer — Привет, мир! &amp; Xin chào thế giới!</title>
+  <meta name="description" content="Flash Russian ('Привет, мир!') or Vietnamese ('Xin chào thế giới!') firmware onto your LilyGO TTGO T-Display ESP32 directly from your web browser.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
   <style>
@@ -14,6 +14,7 @@
       --card-border: #1e2d4a;
       --accent-cyan: #00f0ff;
       --accent-magenta: #ff007f;
+      --accent-gold: #ffb703;
       --accent-green: #00ff66;
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
@@ -41,7 +42,7 @@
 
     .container {
       width: 100%;
-      max-width: 780px;
+      max-width: 820px;
       display: flex;
       flex-direction: column;
       gap: 2rem;
@@ -55,21 +56,34 @@
       gap: 0.75rem;
     }
 
+    .badges-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       padding: 0.3rem 0.85rem;
       border-radius: 9999px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       background: rgba(0, 240, 255, 0.12);
       color: var(--accent-cyan);
       border: 1px solid rgba(0, 240, 255, 0.25);
     }
 
+    .badge.gold {
+      background: rgba(255, 183, 3, 0.12);
+      color: var(--accent-gold);
+      border: 1px solid rgba(255, 183, 3, 0.25);
+    }
+
     h1 {
-      font-size: 2.4rem;
+      font-size: 2.3rem;
       font-weight: 800;
       background: linear-gradient(135deg, #ffffff 40%, var(--accent-cyan) 100%);
       -webkit-background-clip: text;
@@ -80,13 +94,51 @@
     .subtitle {
       color: var(--text-muted);
       font-size: 1.1rem;
-      max-width: 600px;
+      max-width: 620px;
+    }
+
+    /* Language Switcher */
+    .lang-tabs {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .lang-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.4rem;
+      border-radius: 12px;
+      border: 2px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .lang-tab:hover {
+      border-color: var(--accent-cyan);
+      color: var(--text-main);
+    }
+
+    .lang-tab.active {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
     }
 
     /* Screen Mockup */
     .screen-preview-wrapper {
       display: flex;
       justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
       margin: 0.5rem 0;
     }
 
@@ -136,10 +188,11 @@
       justify-content: center;
       gap: 3px;
       box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.08);
+      text-align: center;
     }
 
     .mock-title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: bold;
       color: #07ff;
       text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
@@ -166,6 +219,35 @@
       color: #f81f;
     }
 
+    .hardware-photo-card {
+      width: 320px;
+      height: 180px;
+      border-radius: 14px;
+      border: 4px solid #334155;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .hardware-photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hardware-photo-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 4px 8px;
+      font-size: 10px;
+      color: #cbd5e1;
+      text-align: center;
+    }
+
     /* Flash Card */
     .installer-card {
       background: var(--card-bg);
@@ -183,6 +265,12 @@
     .installer-title {
       font-size: 1.4rem;
       font-weight: 700;
+    }
+
+    .installer-edition-indicator {
+      font-size: 0.95rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
     }
 
     .steps {
@@ -365,21 +453,35 @@
   <div class="container">
     <!-- Header -->
     <header>
-      <div class="badge">ESP32 &bull; ST7789 240x135 &bull; v0.1.0</div>
+      <div class="badges-row">
+        <span class="badge">ESP32 &bull; 4MB Flash</span>
+        <span class="badge">ST7789 240x135 IPS</span>
+        <span class="badge gold">Version v0.2.0</span>
+      </div>
       <h1>T-Display Web Installer</h1>
-      <p class="subtitle">Flash the Russian <strong>"Привет, мир!"</strong> firmware onto your LilyGO TTGO T-Display directly from your browser via Web Serial.</p>
+      <p class="subtitle">Flash either the Russian <strong>"Привет, мир!"</strong> or Vietnamese <strong>"Xin chào thế giới!"</strong> firmware onto your LilyGO TTGO T-Display directly from your browser.</p>
+
+      <!-- Language Selector -->
+      <div class="lang-tabs">
+        <button class="lang-tab active" id="tab-ru" onclick="selectLanguage('ru')">
+          🇷🇺 Russian (Привет, мир!)
+        </button>
+        <button class="lang-tab" id="tab-vi" onclick="selectLanguage('vi')">
+          🇻🇳 Vietnamese (Xin chào thế giới!)
+        </button>
+      </div>
     </header>
 
-    <!-- Visual Mockup -->
+    <!-- Visual Mockup & Hardware Photo -->
     <div class="screen-preview-wrapper">
       <div class="device-mockup">
         <div class="mock-header">
-          <span>TTGO T-Display ESP32</span>
+          <span id="mock-board">TTGO T-Display [RU]</span>
           <span>Cyberpunk</span>
         </div>
         <div class="mock-body">
           <div class="mock-card">
-            <span class="mock-title">Привет, мир!</span>
+            <span class="mock-title" id="mock-title">Привет, мир!</span>
             <span class="mock-sub">Hello World!</span>
             <span class="mock-chip">ESP32 &bull; 4MB FLASH &bull; ST7789</span>
           </div>
@@ -389,38 +491,44 @@
           <span>00:42</span>
         </div>
       </div>
+
+      <div class="hardware-photo-card">
+        <img src="docs/hello_world.jpg" alt="Running LilyGO TTGO T-Display" onerror="this.parentElement.style.display='none'">
+        <div class="hardware-photo-caption">Physical LilyGO T-Display running Hello World</div>
+      </div>
     </div>
 
     <!-- Web Installer Card -->
     <div class="installer-card">
-      <h2 class="installer-title">Install Firmware</h2>
+      <h2 class="installer-title" id="installer-heading">Install Russian Edition</h2>
+      <p class="installer-edition-indicator" id="installer-sub">Ready to flash "Привет, мир!" (v0.2.0)</p>
 
       <div class="steps">
         <div class="step-item">
           <span class="step-number">1</span>
-          <p class="step-text">Connect your <strong>T-Display</strong> to your computer using a USB-C data cable.</p>
+          <p class="step-text">Connect your <strong>T-Display</strong> to your computer via a USB-C data cable.</p>
         </div>
         <div class="step-item">
           <span class="step-number">2</span>
-          <p class="step-text">Click <strong>Connect &amp; Flash</strong> below and choose your USB serial port in the pop-up.</p>
+          <p class="step-text">Click <strong>Connect &amp; Flash</strong> and choose your USB serial port in the browser pop-up.</p>
         </div>
         <div class="step-item">
           <span class="step-number">3</span>
-          <p class="step-text">Confirm <strong>Install</strong> to write the firmware in ~15 seconds.</p>
+          <p class="step-text">Confirm <strong>Install</strong> to flash the firmware in ~15 seconds.</p>
         </div>
       </div>
 
       <!-- ESP Web Install Component -->
-      <esp-web-install-button manifest="manifest.json">
-        <button slot="activate" class="custom-install-btn">
+      <esp-web-install-button id="esp-button" manifest="manifest-ru.json">
+        <button slot="activate" class="custom-install-btn" id="btn-flash-label">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
           </svg>
-          Connect &amp; Flash
+          Connect &amp; Flash (RU)
         </button>
         <div slot="unsupported" class="alert-box">
           ⚠️ <strong>Web Serial is not supported by your browser.</strong><br>
-          Please open this page in <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Opera</strong> on desktop (Windows, macOS, Linux, or ChromeOS).
+          Please open this page in <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Opera</strong> on desktop (Windows, macOS, Linux, ChromeOS).
         </div>
         <div slot="not-allowed" class="alert-box">
           ⚠️ <strong>Web Serial requires a secure context (HTTPS).</strong><br>
@@ -432,9 +540,9 @@
     <!-- Features Overview -->
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">🇷🇺</div>
-        <div class="feature-title">Native Cyrillic UTF-8</div>
-        <div class="feature-desc">Embedded FreeSans Cyrillic font headers (12pt &amp; 9pt) supporting all Russian uppercase and lowercase letters.</div>
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">Dual Language Support</div>
+        <div class="feature-desc">Both Russian (Cyrillic) and Vietnamese (tone marks &amp; diacritics) supported. Hold Button 2 (>1.5s) to toggle language on the device at any time.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎨</div>
@@ -444,12 +552,12 @@
       <div class="feature-card">
         <div class="feature-icon">📱</div>
         <div class="feature-title">Interactive Screens</div>
-        <div class="feature-desc">Cycle between Greeting Card, Live System Diagnostics (CPU/Heap/Flash), and Alphabet showcase with Button 2.</div>
+        <div class="feature-desc">Cycle between Greeting Card, Live System Diagnostics (CPU/Heap/Flash), and Language Alphabet showcase with Button 2.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔄</div>
         <div class="feature-title">180° Screen Flip</div>
-        <div class="feature-desc">Long-press Button 1 (>1.5s) to rotate the screen 180 degrees so USB orientation is never an issue.</div>
+        <div class="feature-desc">Hold Button 1 (>1.5s) to rotate the screen 180 degrees so USB orientation is never an issue.</div>
       </div>
     </div>
 
@@ -473,7 +581,7 @@
           <tr>
             <td><strong>Button 2 (Right / Bottom)</strong></td>
             <td><code>GPIO 35</code></td>
-            <td>Short press: Switch screen (Greeting &rarr; SysInfo &rarr; Alphabet)</td>
+            <td>Short press: Switch screen (Greeting &rarr; SysInfo &rarr; Alphabet)<br>Long press (>1.5s): <strong>Toggle Language (RU &harr; VI)</strong></td>
           </tr>
           <tr>
             <td><strong>Backlight Control</strong></td>
@@ -491,45 +599,40 @@
 
     <!-- Manual Download Section -->
     <div class="info-card">
-      <h3>Manual Downloads &amp; Offline Flashing</h3>
+      <h3>Manual Downloads &amp; Offline Flashing (v0.2.0)</h3>
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
-        If you prefer flashing manually using <code>esptool.py</code>:
+        Precompiled standalone binaries ready for <code>esptool.py</code>:
       </p>
       <table>
         <thead>
           <tr>
-            <th>File</th>
-            <th>Size</th>
-            <th>Flashing Offset</th>
+            <th>Edition</th>
+            <th>All-in-One Binary (Offset 0x0)</th>
+            <th>App Binary (Offset 0x10000)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><a href="bin/merged-firmware.bin" download>merged-firmware.bin</a> (All-in-One)</td>
-            <td>~390 KB</td>
-            <td><code>0x0</code> (Single command full flash)</td>
+            <td>🇷🇺 <strong>Russian</strong> (Привет, мир!)</td>
+            <td><a href="bin/merged-firmware-ru.bin" download>merged-firmware-ru.bin</a> (~405 KB)</td>
+            <td><a href="bin/firmware-ru.bin" download>firmware-ru.bin</a> (~341 KB)</td>
           </tr>
           <tr>
-            <td><a href="bin/firmware.bin" download>firmware.bin</a> (App only)</td>
-            <td>~325 KB</td>
-            <td><code>0x10000</code></td>
+            <td>🇻🇳 <strong>Vietnamese</strong> (Xin chào thế giới!)</td>
+            <td><a href="bin/merged-firmware-vi.bin" download>merged-firmware-vi.bin</a> (~405 KB)</td>
+            <td><a href="bin/firmware-vi.bin" download>firmware-vi.bin</a> (~341 KB)</td>
           </tr>
           <tr>
-            <td><a href="bin/bootloader.bin" download>bootloader.bin</a></td>
-            <td>~23 KB</td>
-            <td><code>0x1000</code></td>
-          </tr>
-          <tr>
-            <td><a href="bin/partitions.bin" download>partitions.bin</a></td>
-            <td>~3 KB</td>
-            <td><code>0x8000</code></td>
+            <td>⚙️ <strong>Bootloader &amp; Partitions</strong></td>
+            <td><a href="bin/bootloader.bin" download>bootloader.bin</a> (23 KB)</td>
+            <td><a href="bin/partitions.bin" download>partitions.bin</a> (3 KB)</td>
           </tr>
         </tbody>
       </table>
       <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
         One-liner flash command:
         <code style="display: block; margin-top: 0.4rem; padding: 0.5rem; word-break: break-all;">
-          esptool.py --chip esp32 write_flash 0x0 merged-firmware.bin
+          esptool.py --chip esp32 write_flash 0x0 bin/merged-firmware-vi.bin
         </code>
       </div>
     </div>
@@ -538,12 +641,55 @@
     <footer>
       <div class="footer-links">
         <a href="https://github.com/kreier/t-display-again" target="_blank" rel="noopener">GitHub Repository</a>
-        <a href="https://github.com/kreier/t-display-again/releases/tag/0.1.0" target="_blank" rel="noopener">Release v0.1.0</a>
+        <a href="https://github.com/kreier/t-display-again/releases/tag/0.2.0" target="_blank" rel="noopener">Release v0.2.0</a>
         <a href="https://esphome.github.io/esp-web-tools/" target="_blank" rel="noopener">Powered by ESP Web Tools</a>
       </div>
       <div>LilyGO TTGO T-Display ESP32 &bull; Licensed under MIT</div>
     </footer>
   </div>
+
+  <script>
+    function selectLanguage(lang) {
+      const tabRu = document.getElementById('tab-ru');
+      const tabVi = document.getElementById('tab-vi');
+      const mockBoard = document.getElementById('mock-board');
+      const mockTitle = document.getElementById('mock-title');
+      const installerHeading = document.getElementById('installer-heading');
+      const installerSub = document.getElementById('installer-sub');
+      const espButton = document.getElementById('esp-button');
+      const flashLabel = document.getElementById('btn-flash-label');
+
+      if (lang === 'vi') {
+        tabVi.classList.add('active');
+        tabRu.classList.remove('active');
+        mockBoard.textContent = 'TTGO T-Display [VI]';
+        mockTitle.textContent = 'Xin chào thế giới!';
+        installerHeading.textContent = 'Install Vietnamese Edition';
+        installerSub.textContent = 'Ready to flash "Xin chào thế giới!" (v0.2.0)';
+        espButton.setAttribute('manifest', 'manifest-vi.json');
+        flashLabel.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          Connect &amp; Flash (VI)
+        `;
+      } else {
+        tabRu.classList.add('active');
+        tabVi.classList.remove('active');
+        mockBoard.textContent = 'TTGO T-Display [RU]';
+        mockTitle.textContent = 'Привет, мир!';
+        installerHeading.textContent = 'Install Russian Edition';
+        installerSub.textContent = 'Ready to flash "Привет, мир!" (v0.2.0)';
+        espButton.setAttribute('manifest', 'manifest-ru.json');
+        flashLabel.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          Connect &amp; Flash (RU)
+        `;
+      }
+    }
+  </script>
 
 </body>
 </html>
